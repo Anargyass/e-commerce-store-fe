@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
-import Button from "../components/Button";
-import AddProductModal from "../components/AddProductModal";
+import Button from "../../components/Button";
+import AddProductModal from "../../components/AddProductModal";
+
 
 type Product = {
   id: number;
