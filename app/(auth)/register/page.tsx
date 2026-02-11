@@ -1,7 +1,10 @@
 "use client"; // Wajib di Next.js App Router untuk form interaktif
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export default function RegisterPage() {
+    const router = useRouter();
     // State untuk menampung inputan user
     const [username, setUsername] = useState("");
     const [email, setEmail] = useState("");
@@ -22,8 +25,12 @@ export default function RegisterPage() {
 
             if (response.ok) {
                 alert("Akun berhasil dibuat! Sekarang silakan login.");
+                router.push("/login");
             } else {
-                alert("Gagal daftar. Username/Email mungkin sudah dipakai.");
+                // 1. Kita ambil teks kiriman dari Backend (misal: "Username sudah digunakan")
+                const msg = await response.text(); 
+                // 2. Kita tampilkan ke user supaya mereka nggak bingung
+                alert("Gagal daftar: " + msg);
             }
         } catch (error) {
             console.error("Error:", error);
@@ -66,6 +73,12 @@ export default function RegisterPage() {
                         Register
                     </button>
                 </form>
+                <p className="mt-4 text-sm text-zinc-600">
+                    Sudah punya akun?{" "}
+                    <Link href="/login" className="text-zinc-900 underline">
+                        Login
+                    </Link>
+                </p>
             </div>
         </div>
     );
