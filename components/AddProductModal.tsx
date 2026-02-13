@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
 import Button from "./Button";
+import { getToken } from "@/lib/auth";
 
 type AddProductModalProps = {
   onCreated: () => Promise<void>;
@@ -28,12 +29,19 @@ export default function AddProductModal({ onCreated }: AddProductModalProps) {
       return;
     }
 
+    const token = getToken();
+    if (!token) {
+      alert("Anda harus login terlebih dahulu");
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const response = await fetch("http://localhost:8080/api/products", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
         },
         body: JSON.stringify({
           name: form.name.trim(),

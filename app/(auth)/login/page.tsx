@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { saveToken } from "@/lib/auth";
 
 
 
@@ -16,25 +17,24 @@ export default function LoginPage() {
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
-		// Tambahkan logika autentikasi di sini
 
 		const data = { email, password };
 
-		// buat respnse ke api login
 		try {
 			const response = await fetch("http://localhost:8080/api/login", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify(data),
 			});
+			
 			if (response.ok) {
+				const result = await response.json();
+				// Simpan token ke localStorage
+				saveToken(result.token);
 				alert("Login berhasil!");
-				// Redirect atau lakukan sesuatu setelah login berhasil, push ke products
 				router.push("/products");
 			} else {
-				// 1. Kita ambil teks kiriman dari Backend (misal: "Email atau password salah")
 				const msg = await response.text();	
-				// 2. Kita tampilkan ke user supaya mereka nggak bingung
 				alert("Gagal login: " + msg);
 			}
 		} catch (error) {
@@ -42,7 +42,6 @@ export default function LoginPage() {
 			alert("Terjadi kesalahan koneksi ke server.");
 		}
 	
-		
 
 
 

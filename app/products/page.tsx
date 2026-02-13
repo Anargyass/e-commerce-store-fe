@@ -1,8 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Button from "../../components/Button";
 import AddProductModal from "../../components/AddProductModal";
-
+import { getToken, removeToken } from "@/lib/auth";
 
 type Product = {
   id: number;
@@ -10,10 +11,13 @@ type Product = {
   price: number;
 };
 
-async function getProducts(): Promise<Product[]> {
+async function getProducts(token: string): Promise<Product[]> {
   try {
     const response = await fetch("http://localhost:8080/api/products", {
       cache: "no-store",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+      },
     });
 
     if (!response.ok) {
@@ -28,30 +32,56 @@ async function getProducts(): Promise<Product[]> {
 }
 
 export default function Home() {
+  const router = useRouter();
   const [items, setItems] = useState<Product[]>([]);
+
   const loadProducts = async () => {
-    const data = await getProducts();
+    const token = getToken();
+    if (!token) {
+      router.push("/login");
+      return;
+    }
+    const data = await getProducts(token);
     setItems(data);
   };
 
   useEffect(() => {
+    // Check token, redirect jika tidak ada
+    const token = getToken();
+    if (!token) {
+      router.push("/login");
+      return;
+    }
     loadProducts();
-  }, []);
+  }, [router]);
 
   const handleDelete = async (id: number) => {
-  const response = await fetch(
-    `http://localhost:8080/api/products?id=${id}`, // Ini format Query String sesuai Go kita
-    {
-      method: "DELETE",
+    const token = getToken();
+    if (!token) {
+      router.push("/login");
+      return;
     }
-  );
 
-  if (response.ok) {
-    await loadProducts();
-  }
-};
+    const response = await fetch(
+      `http://localhost:8080/api/products?id=${id}`,
+      {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
+      }
+    );
 
-  
+    if (response.ok) {
+      await loadProducts();
+    }
+  };
+
+  const handleLogout = () => {
+    removeToken();
+    router.push("/login");
+  };
+
   return (
     <div className="min-h-screen bg-zinc-50 px-6 py-12 text-zinc-900">
       <main className="mx-auto flex w-full max-w-4xl flex-col gap-8">
@@ -65,7 +95,15 @@ export default function Home() {
                 Kelola produk dengan tombol tambah dan hapus.
               </p>
             </div>
-            <AddProductModal onCreated={loadProducts} />
+            <div className="flex items-center gap-4">
+              <AddProductModal onCreated={loadProducts} />
+              <button
+                onClick={handleLogout}
+                className="rounded-md bg-red-600 px-4 py-2 text-white hover:bg-red-700 transition-colors"
+              >
+                Logout
+              </button>
+            </div>
           </div>
         </header>
 
@@ -83,33 +121,30 @@ export default function Home() {
             </div>
           ) : (
             items.map((item) => (
-            <div
-              key={item.id}
-              className="flex items-center justify-between rounded-xl border border-zinc-200 bg-white px-4 py-4 text-base shadow-sm"
-            >
-              <span className="w-1/5 font-medium text-zinc-700">{item.id}</span>
-              <span className="w-1/2 text-zinc-900">{item.name}</span>
-              <span className="w-1/5 text-right font-semibold text-zinc-900">
-                Rp {item.price.toLocaleString("id-ID")}
-              </span>
-              <div className="flex w-24 justify-end">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleDelete(item.id)}
-                >
-                  Hapus
-                </Button>
+              <div
+                key={item.id}
+                className="flex items-center justify-between rounded-xl border border-zinc-200 bg-white px-4 py-4 text-base shadow-sm"
+              >
+                <span className="w-1/5 font-medium text-zinc-700">{item.id}</span>
+                <span className="w-1/2 text-zinc-900">{item.name}</span>
+                <span className="w-1/5 text-right font-semibold text-zinc-900">
+                  Rp {item.price.toLocaleString("id-ID")}
+                </span>
+                <div className="flex w-24 justify-end">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDelete(item.id)}
+                  >
+                    Hapus
+                  </Button>
+                </div>
               </div>
-            </div>
             ))
           )}
         </section>
       </main>
-
-      
-
     </div>
   );
 }
